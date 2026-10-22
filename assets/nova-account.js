@@ -25,7 +25,7 @@ async function sync(){if(!user||!db||!C)return;state={...state,status:'syncing'}
   if(r==='pulled')setTimeout(()=>location.reload(),600)}
  catch(e){state={...state,status:'error',at:Date.now(),msg:tr(e)};emit()}}
 const A=window.novaAccount={enabled:ok,
- get user(){return user},get state(){return state},
+ get user(){return user},get state(){return state},get resolved(){return !first},
  on(f){L.push(f);f(user,state)},
  queuePush(){if(!user||!db)return;clearTimeout(pt);pt=setTimeout(sync,1500)},
  sync,
@@ -37,7 +37,7 @@ const A=window.novaAccount={enabled:ok,
  async signOut(){need();await auth.signOut()}};
 async function init(){
  if(!ok){emit();return}
- if(!hint()&&!/\/(account|console)\//.test(P)){emit();return}
+ if(!hint()&&!window.NOVA_REQUIRE_GOOGLE&&!/\/(account|console)\//.test(P)){emit();return}
  try{await loadSDK()}catch(e){state={...state,status:'error',msg:e.message};emit();return}
  fb=window.firebase;if(!fb.apps.length)fb.initializeApp(cfg);auth=fb.auth();db=fb.firestore();
  auth.onAuthStateChanged(u=>{user=u||null;

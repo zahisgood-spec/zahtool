@@ -39,3 +39,9 @@
 - 新增 `account/index.html`（登入、註冊、Google 登入、忘記密碼、同步狀態）、`assets/nova-account.js`、`assets/nova-config.js`。
 - 後端使用 Firebase（Authentication + Firestore）；設定步驟見 `SETUP_ACCOUNT.md`。未填 `nova-config.js` 時維持僅本機模式。
 - 登入後，主控台設定與使用統計會跨裝置同步（以最後修改時間為準）。
+
+## V3.2 登入關卡
+- 新增 `assets/nova-gate.js`：開場載入動畫結束後，顯示「使用 Google 登入」全螢幕關卡，登入前整站無法操作。
+- 開關：`assets/nova-config.js` 的 `window.NOVA_REQUIRE_GOOGLE`（true 啟用／false 關閉）。
+- `account/` 頁面不受關卡限制。曾登入過的使用者會先等 Firebase 確認狀態，不會閃現關卡。
+- 注意：這是前端關卡，用來引導登入；若要真正保護資料，需搭配後端驗證。

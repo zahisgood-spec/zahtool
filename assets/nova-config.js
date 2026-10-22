@@ -10,3 +10,5 @@ window.NOVA_CLOUD={
   messagingSenderId:'725839637487',
   appId:'1:725839637487:web:b4f4180b65574cd79c241a'
 };
+/* true＝載入動畫結束後，必須以 Google 登入才能使用整站；改成 false 即關閉登入關卡 */
+window.NOVA_REQUIRE_GOOGLE=true;
