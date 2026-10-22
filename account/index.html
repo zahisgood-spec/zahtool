@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<script src="../assets/nova-console.js"></script>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#05060d"><title>帳號｜ZAHTOOL</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#05060d;--text:#f3f2ff;--muted:#9aa2c4;--line:#ffffff1a;--violet:#a58bff;--cyan:#6fdcff;--g1:#dccfff;--g2:#7fe0ff;--g3:#93f8d9;--disp:Syne,"Noto Sans TC",system-ui,sans-serif}
+*{box-sizing:border-box}body{margin:0;min-height:100svh;color:var(--text);font-family:"Noto Sans TC",system-ui,sans-serif;background:radial-gradient(ellipse at 10% -5%,#34215d 0,transparent 38%),radial-gradient(ellipse at 95% 8%,#11314b 0,transparent 32%),var(--bg)}
+a{color:inherit;text-decoration:none}button,input{font:inherit}button{cursor:pointer}:focus-visible{outline:2px solid var(--cyan);outline-offset:3px;border-radius:8px}
+.wrap{width:min(1000px,calc(100% - 36px));margin:auto;padding:26px 0 60px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px}.brand{display:flex;align-items:center;gap:11px;font:800 1.08rem var(--disp)}.logo{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:linear-gradient(135deg,var(--g1),var(--g2));color:#080a16}
+.g{background:linear-gradient(100deg,var(--g1),var(--g2) 55%,var(--g3));-webkit-background-clip:text;background-clip:text;color:transparent}
+.pill{border:1px solid var(--line);background:#0b0e1dcc;border-radius:99px;padding:10px 16px;font-size:.84rem;font-weight:700;color:#e5e6ff}
+.card{width:min(440px,100%);margin:44px auto 0;border:1px solid var(--line);border-radius:24px;background:linear-gradient(150deg,#161a33c8,#0b0e1dd8);backdrop-filter:blur(18px);padding:28px}
+h1{font:800 1.9rem/1.1 var(--disp);letter-spacing:-.03em;margin:0 0 6px}.sub{color:var(--muted);font-size:.9rem;margin:0 0 20px;line-height:1.7}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:#ffffff0a;border-radius:99px;padding:4px;margin-bottom:18px}.tabs button{border:0;border-radius:99px;padding:9px;background:none;color:var(--muted);font-weight:700}.tabs button[aria-selected=true]{background:linear-gradient(110deg,var(--g1),var(--g2));color:#070a16}
+label{display:block;font-size:.82rem;color:var(--muted);margin:14px 0 6px}input{width:100%;background:#0b0e1d;border:1px solid #ffffff26;color:#fff;border-radius:12px;padding:12px 14px}input:focus{border-color:var(--violet);outline:none}
+.go{width:100%;margin-top:20px;border:0;border-radius:99px;padding:14px;background:linear-gradient(110deg,var(--g1),var(--g2) 65%,var(--g3));color:#070a16;font-weight:900}.go:disabled{opacity:.55;cursor:wait}
+.alt{width:100%;margin-top:10px;border:1px solid var(--line);background:#ffffff08;color:#e5e6ff;border-radius:99px;padding:12px;font-weight:700}.alt:hover{border-color:var(--violet)}
+.lnk{background:none;border:0;color:var(--cyan);font-size:.82rem;padding:0;margin-top:14px}
+.or{display:flex;align-items:center;gap:10px;color:#6c7497;font-size:.78rem;margin:18px 0 0}.or:before,.or:after{content:"";flex:1;height:1px;background:var(--line)}
+#msg{min-height:1.4em;margin-top:14px;font-size:.86rem;line-height:1.6}#msg.bad{color:#ff9aa8}#msg.good{color:#8ff0cf}
+.hid{display:none!important}.note{border:1px dashed #f5b97166;border-radius:14px;padding:14px;color:#f5d7a8;font-size:.86rem;line-height:1.8}
+.av{width:60px;height:60px;border-radius:50%;display:grid;place-items:center;font:800 1.5rem var(--disp);background:linear-gradient(135deg,var(--g1),var(--g2));color:#080a16;margin-bottom:14px}
+.kv{display:flex;justify-content:space-between;gap:10px;padding:11px 0;border-bottom:1px solid var(--line);font-size:.88rem}.kv span:first-child{color:var(--muted)}
+#toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,20px);opacity:0;pointer-events:none;background:#161a33f2;border:1px solid var(--line);border-radius:99px;padding:10px 18px;font-size:.86rem;transition:.3s;z-index:120}#toast.show{opacity:1;transform:translate(-50%,0)}
+</style><link rel="stylesheet" href="../assets/nova-fx.css">
+</head>
+<body>
+<div class="wrap">
+<div class="top"><a class="brand" href="../index.html"><span class="logo">Z</span><span>ZAH<span class="g">TOOL</span></span></a><span style="display:flex;gap:8px"><a class="pill" href="../console/index.html">⚙ 主控台</a><a class="pill" href="../index.html#toolbox">← 所有工具</a></span></div>
+
+<div class="card">
+ <div id="vNone" class="hid"><h1>尚未啟用帳號</h1><p class="sub">網站管理者需要先完成雲端後端設定，才能登入與跨裝置同步。</p><div class="note">請依 <b>SETUP_ACCOUNT.md</b> 設定 Firebase，並把專案設定值填進 <b>assets/nova-config.js</b>。<br>在那之前，主控台設定仍會存在這個瀏覽器。</div><a class="alt" style="display:block;text-align:center" href="../console/index.html">前往主控台</a></div>
+
+ <div id="vAuth" class="hid"><h1 id="aTitle">歡迎回來</h1><p class="sub" id="aSub">登入後，主控台設定會在你的所有裝置同步。</p>
+  <div class="tabs" role="tablist"><button id="tLogin" role="tab" aria-selected="true">登入</button><button id="tReg" role="tab" aria-selected="false">註冊</button></div>
+  <form id="f" novalidate><label for="em">Email</label><input id="em" type="email" autocomplete="email" required>
+  <label for="pw">密碼</label><input id="pw" type="password" autocomplete="current-password" minlength="6" required>
+  <div id="cfWrap" class="hid"><label for="pw2">再輸入一次密碼</label><input id="pw2" type="password" autocomplete="new-password"></div>
+  <button class="go" id="go" type="submit">登入</button></form>
+  <div class="or">或</div><button class="alt" id="gg" type="button">使用 Google 繼續</button>
+  <button class="lnk" id="fg" type="button">忘記密碼？</button><div id="msg" role="status" aria-live="polite"></div></div>
+
+ <div id="vRec" class="hid"><h1>設定新密碼</h1><p class="sub">請輸入你的新密碼。</p><form id="fr" novalidate><label for="np">新密碼</label><input id="np" type="password" autocomplete="new-password" minlength="6"><button class="go" type="submit">更新密碼</button></form><div id="msgR" role="status" aria-live="polite"></div></div>
+
+ <div id="vUser" class="hid"><div class="av" id="avt">Z</div><h1 id="uName">已登入</h1><p class="sub" id="uMail"></p>
+  <div class="kv"><span>同步狀態</span><b id="sStat">—</b></div><div class="kv"><span>最後同步</span><b id="sAt">—</b></div>
+  <button class="go" id="syncBtn">立即同步</button><a class="alt" style="display:block;text-align:center" href="../console/index.html">前往主控台</a><button class="alt" id="out">登出</button></div>
+</div>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+<script src="../assets/nova-config.js"></script><script src="../assets/nova-fx.js"></script><script src="../assets/nova-account.js"></script><script src="../assets/nova-sfx.js"></script>
+<script>
+const $=id=>document.getElementById(id),A=window.novaAccount;let mode='login',busy=false,tt;
+const toast=m=>{const e=$('toast');e.textContent=m;e.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>e.classList.remove('show'),2200)};
+const say=(m,k,id)=>{const e=$(id||'msg');e.textContent=m;e.className=k||'';if(k==='bad')toast('操作失敗，請查看訊息')};
+const view=v=>['vNone','vAuth','vRec','vUser'].forEach(x=>$(x).classList.toggle('hid',x!==v));
+function setMode(m){mode=m;const r=m==='reg';$('tLogin').setAttribute('aria-selected',!r);$('tReg').setAttribute('aria-selected',r);$('cfWrap').classList.toggle('hid',!r);$('go').textContent=r?'建立帳號':'登入';$('aTitle').textContent=r?'建立你的帳號':'歡迎回來';$('pw').autocomplete=r?'new-password':'current-password';say('','')}
+$('tLogin').onclick=()=>setMode('login');$('tReg').onclick=()=>setMode('reg');
+const run=async(fn,btn)=>{if(busy)return;busy=true;btn&&(btn.disabled=true);try{await fn()}catch(e){say(e.message||String(e),'bad')}finally{busy=false;btn&&(btn.disabled=false)}};
+const okMail=v=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+$('f').onsubmit=e=>{e.preventDefault();const em=$('em').value.trim(),pw=$('pw').value;
+ if(!okMail(em))return say('請輸入正確的 Email','bad');if(pw.length<6)return say('密碼至少需要 6 個字元','bad');
+ if(mode==='reg'&&pw!==$('pw2').value)return say('兩次輸入的密碼不一致','bad');
+ run(async()=>{if(mode==='reg'){const r=await A.signUp(em,pw);say(r==='confirm'?'驗證信已寄出，請到信箱點擊連結完成註冊。':'註冊成功！','good');if(r==='confirm')toast('驗證信已寄出')}else{await A.signIn(em,pw)}},$('go'))};
+$('gg').onclick=()=>run(()=>A.google(),$('gg'));
+$('fg').onclick=()=>{const em=$('em').value.trim();if(!okMail(em))return say('請先在上方輸入你的 Email','bad');run(async()=>{await A.reset(em);say('重設密碼信已寄出，請查看信箱。','good')})};
+$('fr').onsubmit=e=>{e.preventDefault();const p=$('np').value;if(p.length<6)return say('密碼至少需要 6 個字元','bad','msgR');run(async()=>{await A.updatePassword(p);say('密碼已更新。','good','msgR');toast('密碼已更新')})};
+$('out').onclick=()=>run(async()=>{await A.signOut();toast('已登出')},$('out'));
+$('syncBtn').onclick=()=>run(()=>A.sync(),$('syncBtn'));
+const SN={idle:'尚未同步',syncing:'同步中…',ok:'已同步',error:'同步失敗'};
+if(!A||!A.enabled){view('vNone')}else{view('vAuth');
+ A.on((u,s)=>{if(s.recovery&&u)return view('vRec');
+  if(u){view('vUser');const n=(novaConsole.get().name||u.email.split('@')[0]);$('uName').textContent=n;$('uMail').textContent=u.email;$('avt').textContent=n.slice(0,1).toUpperCase();
+   $('sStat').textContent=SN[s.status]+(s.status==='error'&&s.msg?'：'+s.msg:'');$('sAt').textContent=s.at?new Date(s.at).toLocaleString('zh-TW'):'—'}
+  else view('vAuth')})}
+</script>
+</body></html>
