@@ -64,6 +64,7 @@ if(!IDX)requestAnimationFrame(()=>wipe(false).then(done));
 addEventListener('pageshow',e=>{if(e.persisted)done()});
 D.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('a[href]');if(!a||e.defaultPrevented||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey||e.button||a.target||a.hasAttribute('download'))return;
 const u=new URL(a.href,location.href);if(u.protocol!==location.protocol||(u.pathname===location.pathname&&u.search===location.search))return;
+if(window.NovaEnter&&NovaEnter.intercept(a,u,e)){e.preventDefault();return}
 e.preventDefault();cv.style.pointerEvents='all';wipe(true,e.clientX,e.clientY).then(()=>{location.href=u.href})});
 const dive=(o,id)=>new Promise(r=>{const f=D.createElement('div');f.className='fx-flash';B.append(f);B.classList.add('diving');T={x:0,y:0,z:5.4,s:3.6};BOOM(2.2);
 f.animate([{opacity:0},{opacity:0,offset:.62},{opacity:1}],{duration:1150,easing:'ease-in',fill:'forwards'}).finished.then(()=>{o(id);B.classList.remove('diving');cv.style.pointerEvents='none';return f.animate([{opacity:1},{opacity:0}],{duration:900,easing:'ease-out',fill:'forwards'}).finished}).then(()=>{f.remove();r()})});

@@ -50,7 +50,17 @@ const SC={
  radix:{st:'arp',root:43,mode:'hmin',bpm:128,seed:109,prog:[0,5,3,4,0,5,3,4],name:'進位矩陣'},
  regex:{st:'dark',root:37,mode:'min',bpm:90,seed:113,prog:[0,6,5,6,0,3,5,4],name:'符文解碼'},
  worldclock:{st:'ambient',root:40,mode:'lyd',bpm:84,seed:127,prog:[0,1,4,0,1,4,3,0],name:'環球時區'},
- stopwatch:{st:'tension',root:33,mode:'min',bpm:132,seed:131,prog:[0,0,5,6,0,3,4,4],name:'極限計時'}
+ stopwatch:{st:'tension',root:33,mode:'min',bpm:132,seed:131,prog:[0,0,5,6,0,3,4,4],name:'極限計時'},
+ age:{st:'bell',root:39,mode:'maj',bpm:92,seed:137,prog:[0,4,5,3,0,4,3,4],name:'生辰星圖'},
+ split:{st:'pulse',root:37,mode:'mix',bpm:118,seed:139,prog:[0,6,3,0,0,6,3,4],name:'均分節奏'},
+ diff:{st:'drive',root:41,mode:'dor',bpm:124,seed:149,prog:[0,3,0,6,0,3,6,4],name:'雙面追蹤'},
+ jwt:{st:'dark',root:38,mode:'hmin',bpm:80,seed:151,prog:[0,5,3,4,0,5,3,4],name:'令牌暗號'},
+ morse:{st:'tension',root:43,mode:'min',bpm:112,seed:157,prog:[0,0,5,6,0,3,4,4],name:'電報滴答'},
+ typing:{st:'trap',root:35,mode:'min',bpm:138,seed:163,prog:[0,5,2,6,0,5,2,4],name:'指尖狂飆'},
+ metronome:{st:'march',root:36,mode:'maj',bpm:100,seed:167,prog:[0,3,4,0,5,3,4,0],name:'穩定節拍'},
+ cnnum:{st:'orch',var:'epic',root:37,mode:'min',bpm:84,seed:173,prog:[0,5,2,6,0,5,3,4],name:'大寫禮讚'},
+ calc:{st:'arp',root:34,mode:'dor',bpm:126,seed:179,prog:[0,3,0,6,0,3,6,4],name:'演算脈動'},
+ dice:{st:'trap',root:40,mode:'phr',bpm:142,seed:181,prog:[0,1,0,6,0,1,5,6],name:'命運骰擲'}
 };
 Object.keys(SC).forEach(k=>{const s=SC[k];s.id=k;const y=STY[s.st];s.rev=y.rev;s.wet=y.wet;s.gain=y.gain;s.feel=y.feel});
 

@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="description" content="ZAHTOOL：沉浸式 3D 開場，進入 28 個免費線上工具。">
+<meta name="description" content="ZAHTOOL：沉浸式 3D 開場，進入 38 個免費線上工具。">
 <meta name="theme-color" content="#05060d"><title>ZAHTOOL — 你的工具，新的維度</title><script src="assets/nova-tools.js"></script><script src="assets/nova-console.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -113,7 +113,7 @@ body[data-s=welcome] .studio{display:block}body:not(.ready) .studio{opacity:0;po
 <section class="screen active" id="welcome" aria-label="ZAHTOOL 開場"><div class="hero">
 <div class="brand rise"><span class="logo">Z</span><span>ZAH<span class="g">TOOL</span></span></div>
 <h1 aria-label="你的工具，新的維度。"><span class="ln"><span>你的工具，</span></span><span class="ln"><span class="g">新的維度。</span></span></h1>
-<p class="lead rise r2">28 款免費線上工具，集中在一個空間。打開就能用，不需註冊。</p>
+<p class="lead rise r2">38 款免費線上工具，集中在一個空間。打開就能用，不需註冊。</p>
 <div class="actions rise r3"><button class="cta" id="startBtn">開始探索 ↗</button><a class="ghost" href="console/index.html">⚙ 我的主控台</a><a class="ghost acLink" href="account/index.html">👤 登入</a></div>
 <div class="meta rise r3">移動滑鼠，轉動工具星核。</div>
 </div><div class="hint rise r3"><i></i>滑鼠控制視角</div></section>
@@ -238,5 +238,5 @@ function play(){if(document.body.dataset.s!=='welcome')show('welcome');document.
  iword.innerHTML=[...WORD].map((c,i)=>`<span style="--k:${i}">${c}</span>`).join('');ibar.style.transform='scaleX(0)';icount.textContent='000';
  setTimeout(boot,reduce?0:700)}
 if(START){intro.classList.add('gone');document.body.classList.add('ready');introT=1;show('toolbox')}else boot();
-</script><script src="assets/nova-fx.js"></script><script src="assets/nova-config.js"></script><script src="assets/nova-account.js"></script><script src="assets/nova-gate.js"></script><script src="assets/nova-scenes.js"></script><script src="assets/nova-synth.js"></script><script src="assets/nova-sfx.js"></script><script src="assets/nova-bgm.js"></script><script src="assets/nova-drag.js"></script>
+</script><script src="assets/nova-fx.js"></script><script src="assets/nova-config.js"></script><script src="assets/nova-account.js"></script><script src="assets/nova-gate.js"></script><script src="assets/nova-scenes.js"></script><script src="assets/nova-synth.js"></script><script src="assets/nova-sfx.js"></script><script src="assets/nova-bgm.js"></script><script src="assets/nova-enter.js"></script><script src="assets/nova-drag.js"></script>
 </body></html>

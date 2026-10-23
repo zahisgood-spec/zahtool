@@ -98,6 +98,6 @@ $('file').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileRe
 $('rst').onclick=()=>{if(confirm('確定要重設所有主控台設定與使用統計嗎？')){C.reset();location.reload()}};
 render();
 </script>
-<script src="../assets/nova-fx.js"></script><script src="../assets/nova-config.js"></script><script src="../assets/nova-account.js"></script><script src="../assets/nova-gate.js"></script><script src="../assets/nova-scenes.js"></script><script src="../assets/nova-synth.js"></script><script src="../assets/nova-sfx.js"></script><script src="../assets/nova-bgm.js"></script>
+<script src="../assets/nova-fx.js"></script><script src="../assets/nova-config.js"></script><script src="../assets/nova-account.js"></script><script src="../assets/nova-gate.js"></script><script src="../assets/nova-scenes.js"></script><script src="../assets/nova-synth.js"></script><script src="../assets/nova-sfx.js"></script><script src="../assets/nova-enter.js"></script><script src="../assets/nova-bgm.js"></script>
 <script>if(window.novaAccount)novaAccount.on((u,s)=>{const i=document.getElementById('acInfo'),b=document.getElementById('acBtn');if(!novaAccount.enabled){i.textContent='尚未啟用雲端帳號，設定目前只存在這個瀏覽器。';b.textContent='了解更多'}else if(u){i.textContent='已登入：'+u.email+'・'+({idle:'',syncing:'同步中…',ok:'設定已同步',error:'同步失敗'}[s.status]||'');b.textContent='帳號管理'}else{i.textContent='登入後可在不同裝置同步這份主控台設定。';b.textContent='登入 / 註冊'}})</script>
 </body></html>
