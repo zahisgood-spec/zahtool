@@ -1,9 +1,9 @@
 /* ZAHTOOL 主控台核心：每位使用者（每個瀏覽器）各自的設定與使用紀錄 */
 (()=>{
-const K='nova-console',DEF=()=>({v:1,u:0,name:'',sfx:{on:true,vol:.6},fx:true,sort:'default',tools:{}});
+const K='nova-console',DEF=()=>({v:1,u:0,name:'',sfx:{on:true,vol:.6},bgm:{on:true,vol:.4},fx:true,sort:'default',order:[],tools:{}});
 let S=DEF();
 function load(){try{const j=JSON.parse(localStorage.getItem(K)||'null');S=norm(j)}catch(e){S=DEF()}}
-function norm(j){const d=DEF();if(!j||typeof j!=='object')return d;return{v:1,u:Math.max(0,+j.u||0),name:String(j.name||'').slice(0,24),sfx:{on:j.sfx?j.sfx.on!==false:true,vol:Math.min(1,Math.max(0,j.sfx&&+j.sfx.vol>=0?+j.sfx.vol:.6))},fx:j.fx!==false,sort:['default','used','recent'].includes(j.sort)?j.sort:'default',tools:(j.tools&&typeof j.tools==='object')?j.tools:{}}}
+function norm(j){const d=DEF();if(!j||typeof j!=='object')return d;return{v:1,u:Math.max(0,+j.u||0),name:String(j.name||'').slice(0,24),sfx:{on:j.sfx?j.sfx.on!==false:true,vol:Math.min(1,Math.max(0,j.sfx&&+j.sfx.vol>=0?+j.sfx.vol:.6))},bgm:{on:j.bgm?j.bgm.on!==false:true,vol:Math.min(1,Math.max(0,j.bgm&&+j.bgm.vol>=0?+j.bgm.vol:.4))},fx:j.fx!==false,sort:['default','used','recent','custom'].includes(j.sort)?j.sort:'default',order:Array.isArray(j.order)?j.order.filter(x=>typeof x==='string').slice(0,200):[],tools:(j.tools&&typeof j.tools==='object')?j.tools:{}}}
 const save=(bump=true)=>{if(bump!==false)S.u=Date.now();try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}if(bump!==false&&window.novaAccount&&novaAccount.queuePush)novaAccount.queuePush()};
 load();
 const slug=(location.pathname.match(/\/tools\/([^/]+)/)||[])[1]||null;
@@ -12,12 +12,13 @@ const api={slug,get:()=>S,save,
  enabled:s=>g(s,'on',true),pinned:s=>g(s,'pin',false),toolSfx:s=>g(s,'sfx',true),toolFx:s=>g(s,'fx',true),opens:s=>g(s,'n',0),last:s=>g(s,'t',0),
  setTool(s,k,v){(S.tools[s]=S.tools[s]||{})[k]=v;save()},
  resetStats(s){const t=S.tools[s];if(t){delete t.n;delete t.t;save()}},
- sfxEnabled:()=>S.sfx.on,vol:()=>S.sfx.vol,
- arrange(list){const idx=new Map(list.map((t,i)=>[t[0],i])),m=S.sort;
+ sfxEnabled:()=>S.sfx.on,vol:()=>S.sfx.vol,bgmOn:()=>S.bgm.on,bgmVol:()=>S.bgm.vol,
+ setOrder(a){S.order=a.filter(x=>typeof x==='string').slice(0,200);S.sort='custom';save()},
+ arrange(list){const idx=new Map(list.map((t,i)=>[t[0],i])),m=S.sort,ord=new Map(S.order.map((s,i)=>[s,i])),rank=s=>m==='custom'&&ord.has(s)?ord.get(s):(m==='custom'?1000:0)+idx.get(s);
   return list.filter(t=>api.enabled(t[0])).sort((x,y)=>{const p=(api.pinned(y[0])?1:0)-(api.pinned(x[0])?1:0);if(p)return p;
    if(m==='used'){const d=api.opens(y[0])-api.opens(x[0]);if(d)return d}
    if(m==='recent'){const d=api.last(y[0])-api.last(x[0]);if(d)return d}
-   return idx.get(x[0])-idx.get(y[0])})},
+   return rank(x[0])-rank(y[0])})},
  exportJSON:()=>JSON.stringify(S,null,2),
  applyRemote(o){S=norm(o);save(false)},
  importJSON(str){S=norm(JSON.parse(str));save()},

@@ -47,9 +47,11 @@ input[type=range]{accent-color:var(--violet);width:150px}
 
 <section class="panel"><h2>個人與全域設定</h2><div class="set">
 <div class="row"><label for="uName">顯示名稱</label><input id="uName" type="text" maxlength="24" placeholder="你的名字"></div>
-<div class="row"><label for="sSort">首頁排序（釘選永遠最前）</label><select id="sSort"><option value="default">預設順序</option><option value="used">最常使用</option><option value="recent">最近使用</option></select></div>
+<div class="row"><label for="sSort">首頁排序（釘選永遠最前）</label><select id="sSort"><option value="default">預設順序</option><option value="used">最常使用</option><option value="recent">最近使用</option><option value="custom">自訂（在首頁拖移）</option></select></div>
 <div class="row"><label for="sSfx">音效</label><span class="sw"><input id="sSfx" type="checkbox"><i></i></span></div>
 <div class="row"><label for="sVol">音量</label><input id="sVol" type="range" min="0" max="1" step="0.05"></div>
+<div class="row"><label for="sBgm">背景音樂</label><span class="sw"><input id="sBgm" type="checkbox"><i></i></span></div>
+<div class="row"><label for="sBgmVol">音樂音量</label><input id="sBgmVol" type="range" min="0" max="1" step="0.05"></div>
 <div class="row"><label for="sFx">動態效果（3D 與動畫）</label><span class="sw"><input id="sFx" type="checkbox"><i></i></span></div>
 </div></section>
 
@@ -79,12 +81,15 @@ const bulk=f=>{L.forEach(t=>C.setTool(t[0],'on',f(t[0])));render()};
 $('allOn').onclick=()=>{bulk(()=>true);toast('已全部啟用')};$('allOff').onclick=()=>{bulk(()=>false);toast('已全部停用')};$('onlyPin').onclick=()=>{bulk(s=>C.pinned(s));toast('只保留釘選的工具')};
 /* 全域設定 */
 const hello=()=>{$('hello').innerHTML=(S.name?S.name.replace(/[<>&"]/g,'')+' 的':'我的')+'<span class="g">主控台</span>'};
-$('uName').value=S.name;$('sSort').value=S.sort;$('sSfx').checked=S.sfx.on;$('sVol').value=S.sfx.vol;$('sFx').checked=S.fx;hello();
+$('uName').value=S.name;$('sSort').value=S.sort;$('sSfx').checked=S.sfx.on;$('sVol').value=S.sfx.vol;$('sFx').checked=S.fx;$('sBgm').checked=S.bgm.on;$('sBgmVol').value=S.bgm.vol;hello();
 const sync=()=>dispatchEvent(new Event('nova-sfx-sync'));
 $('uName').oninput=e=>{S.name=e.target.value.slice(0,24);C.save();hello()};
 $('sSort').onchange=e=>{S.sort=e.target.value;C.save()};
 $('sSfx').onchange=e=>{S.sfx.on=e.target.checked;C.save();sync()};
 $('sVol').oninput=e=>{S.sfx.vol=+e.target.value;C.save();window.novaSfx&&novaSfx.play('click')};
+const bsync=()=>dispatchEvent(new Event('nova-bgm-sync'));
+$('sBgm').onchange=e=>{S.bgm.on=e.target.checked;C.save();bsync()};
+$('sBgmVol').oninput=e=>{S.bgm.vol=+e.target.value;C.save();bsync()};
 $('sFx').onchange=e=>{S.fx=e.target.checked;C.save();toast('動態效果設定將於重新載入頁面後生效')};
 /* 資料管理 */
 $('exp').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([C.exportJSON()],{type:'application/json'}));a.download='zahtool-console.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);toast('已匯出設定')};
@@ -93,6 +98,6 @@ $('file').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileRe
 $('rst').onclick=()=>{if(confirm('確定要重設所有主控台設定與使用統計嗎？')){C.reset();location.reload()}};
 render();
 </script>
-<script src="../assets/nova-fx.js"></script><script src="../assets/nova-config.js"></script><script src="../assets/nova-account.js"></script><script src="../assets/nova-gate.js"></script><script src="../assets/nova-sfx.js"></script>
+<script src="../assets/nova-fx.js"></script><script src="../assets/nova-config.js"></script><script src="../assets/nova-account.js"></script><script src="../assets/nova-gate.js"></script><script src="../assets/nova-synth.js"></script><script src="../assets/nova-sfx.js"></script><script src="../assets/nova-bgm.js"></script>
 <script>if(window.novaAccount)novaAccount.on((u,s)=>{const i=document.getElementById('acInfo'),b=document.getElementById('acBtn');if(!novaAccount.enabled){i.textContent='尚未啟用雲端帳號，設定目前只存在這個瀏覽器。';b.textContent='了解更多'}else if(u){i.textContent='已登入：'+u.email+'・'+({idle:'',syncing:'同步中…',ok:'設定已同步',error:'同步失敗'}[s.status]||'');b.textContent='帳號管理'}else{i.textContent='登入後可在不同裝置同步這份主控台設定。';b.textContent='登入 / 註冊'}})</script>
 </body></html>

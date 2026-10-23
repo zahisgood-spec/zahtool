@@ -53,6 +53,7 @@ function show(){
 }
 function hide(){
  if(!el||!el.classList.contains('on'))return;
+ try{window.novaSfx&&novaSfx.play('victory')}catch(e){}
  el.classList.remove('on');setInert(false);D.documentElement.style.overflow='';
  const e=el;el=null;setTimeout(()=>e.remove(),600);
 }
