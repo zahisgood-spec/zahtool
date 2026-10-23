@@ -32,21 +32,65 @@ function fan(t,mode){
  Y.boom(e,.9);Y.crash(e,.45,4.5);Y.timp(e,.75,38);Y.timpRoll(h+6.5*B,1.5*B,.2,.45,45);
  [0,.25,.5,.75].forEach((x,i)=>Y.bell(86+[0,4,7,12][i],e+x*B,.05,2))
 }
+/* ── V3.6 每個環節的音效個性：由場景（曲風／調性）決定打擊、主音色、懸停音 ── */
+const NSC=window.NovaScenes;
+const scn=()=>NSC?NSC.get(NSC.id()):{st:'home',root:38,mode:'maj'};
+const nt=(s,d,o)=>NSC?NSC.note(s,d,o):s.root+[0,2,4,5,7,9,11][d%7]+12*Math.floor(d/7);
+const H={
+ boom:(t,v)=>{Y.boom(t,.8*v,.4);Y.tick(t,.2*v)},
+ kick:(t,v)=>Y.kick(t,.9*v),
+ timp:(t,v,r)=>Y.timp(t,.8*v,r),
+ snare:(t,v)=>{Y.snare(t,.5*v);Y.tick(t,.1*v)},
+ s808:(t,v,r)=>Y.sub808(r+12,t,.45,.6*v),
+ tick:(t,v)=>Y.tick(t,.9*v),
+ gong:(t,v,r)=>{Y.gong(r+12,t,.18*v,1.8);Y.timp(t,.3*v,r)},
+ taiko:(t,v,r)=>{Y.timp(t,.9*v,r);Y.boom(t,.35*v,.3)}
+};
+const L={
+ brass:(n,t,d,v)=>{Y.brass(n,t,d,v);Y.brass(n-12,t,d,v*.7)},
+ synth:(n,t,d,v)=>Y.synth(n,t,d,v*.8,{type:'sawtooth',det:[-8,8],cut:4500,atk:.003}),
+ sq:(n,t,d,v)=>Y.synth(n,t,d,v*.7,{type:'square',cut:2800,q:6}),
+ bell:(n,t,d,v)=>Y.bell(n+12,t,v*.8,d*2+.5),
+ pluck:(n,t,d,v)=>Y.pluck(n,t,v*1.4),
+ choir:(n,t,d,v)=>{Y.choir(n,t,d,v*.8);Y.brass(n-12,t,d*.8,v*.5)},
+ spicc:(n,t,d,v)=>{Y.spicc(n,t,v*1.2);Y.spicc(n+12,t,v*.6)},
+ stab:(n,t,d,v)=>{Y.brass(n,t,d*.6,v*1.1);Y.brass(n+7,t,d*.6,v*.8)}
+};
+const HOV={
+ bell:(n,t,v)=>Y.bell(n+12,t,v,.5),
+ sq:(n,t,v)=>Y.synth(n-12,t,.07,v,{type:'square',cut:3000,q:5}),
+ spicc:(n,t,v)=>Y.spicc(n,t,v),
+ pluck:(n,t,v)=>Y.pluck(n,t,v*1.4),
+ hat:(n,t,v)=>Y.hat(t,v*1.8),
+ snare:(n,t,v)=>Y.snare(t,v*1.6),
+ tick:(n,t,v)=>Y.tick(t,v*1.6)
+};
+const PAL={
+ home:{hit:'boom',lead:'brass',hov:'bell'},orch:{hit:'boom',lead:'brass',hov:'bell'},
+ arp:{hit:'kick',lead:'synth',hov:'sq'},bell:{hit:'tick',lead:'bell',hov:'bell'},
+ dark:{hit:'gong',lead:'choir',hov:'pluck'},pulse:{hit:'timp',lead:'spicc',hov:'spicc'},
+ drive:{hit:'taiko',lead:'stab',hov:'tick'},march:{hit:'snare',lead:'brass',hov:'snare'},
+ ambient:{hit:'tick',lead:'pluck',hov:'bell'},tension:{hit:'tick',lead:'sq',hov:'tick'},
+ trap:{hit:'s808',lead:'bell',hov:'hat'}
+};
+const CT=[14,16,18,21],HV=[21,22,23,25,26],TY=[23,24,25,26,27];
+const rnd=a=>a[Math.random()*a.length|0];
+function pal(){const s=scn(),p=PAL[s.st]||PAL.orch;return{s,hit:H[p.hit],lead:L[p.lead],hov:HOV[p.hov],st:s.st}}
 const S={
- click(){const t=T(),n=[62,66,69,74][Math.random()*4|0];Y.boom(t,.5,.4);Y.tick(t,.12);Y.brass(n,t,.2,.07);Y.brass(n-12,t,.2,.05);Y.bell(n+24,t+.015,.04,.9)},
- power(){const t=T();Y.boom(t,.85);Y.crash(t,.26,2.4);Y.timp(t,.6,38);[62,66,69,74].forEach(n=>Y.brass(n,t,.8,.07));Y.strings(50,t,1.4,.04);
-  [[74,.06],[78,.15],[81,.24],[86,.33]].forEach(a=>{Y.brass(a[0],t+a[1],.3,.05);Y.bell(a[0]+12,t+a[1],.05,1.5)});duck(1700)},
- powerdown(){const t=T();Y.boom(t,.75);Y.timp(t,.55,38);[[74,0],[69,.12],[62,.24],[50,.36]].forEach(a=>{Y.brass(a[0],t+a[1],.35,.06);Y.brass(a[0]-12,t+a[1],.35,.04)});Y.revCrash(t,.5,.1);duck(1300)},
- open(){const t=T();Y.boom(t,.6);chord3(t);Y.bell(86,t+.02,.05,1.4);Y.riser(t,.4,.07)},
- hover(){Y.bell(PENT[Math.random()*5|0],T(),.028,.5)},
- type(){Y.bell(88+(Math.random()*5|0),T(),.03,.2)},
- toggle(){const t=T();Y.tick(t,.1);Y.bell(81,t+.02,.05,.5);Y.bell(88,t+.09,.05,.7)},
- ok(){const t=T();[[74,0],[78,.07],[81,.14],[86,.21]].forEach(a=>Y.bell(a[0]+12,t+a[1],.06,1.1));Y.brass(62,t,.45,.06);Y.brass(69,t+.07,.4,.05);Y.brass(74,t+.14,.5,.06);Y.timp(t,.35,38)},
- warn(){const t=T();Y.brass(50,t,.4,.07);Y.brass(51,t,.4,.06);Y.boom(t,.35)},
+ click(){const t=T(),P=pal(),n=nt(P.s,rnd(CT));P.hit(t,.6,P.s.root);P.lead(n,t,.2,.07);Y.bell(n+12,t+.015,.04,.9)},
+ power(){const t=T(),P=pal();P.hit(t,1,P.s.root);Y.boom(t,.55);Y.crash(t,.26,2.4);Y.timp(t,.6,P.s.root);
+  [0,.06,.14,.24].forEach((o,i)=>{const n=nt(P.s,CT[i]);P.lead(n,t+o,.5-o,.07);Y.bell(n+12,t+o+.04,.05,1.5)});Y.strings(P.s.root+12,t,1.4,.04);duck(1700)},
+ powerdown(){const t=T(),P=pal();P.hit(t,.9,P.s.root);Y.timp(t,.55,P.s.root);
+  [0,.12,.24,.36].forEach((o,i)=>{const n=nt(P.s,CT[3-i]);P.lead(n,t+o,.4,.065)});Y.revCrash(t,.5,.1);duck(1300)},
+ open(){const t=T(),P=pal();P.hit(t,.9,P.s.root);Y.boom(t,.45);[0,1,2].forEach(i=>P.lead(nt(P.s,CT[i]),t,.34,.065));Y.bell(nt(P.s,23)+12,t+.02,.05,1.4);Y.riser(t,.4,.07)},
+ hover(){const P=pal();P.hov(nt(P.s,rnd(HV)),T(),.028)},
+ type(){const P=pal();P.hov(nt(P.s,rnd(TY)),T(),.03)},
+ toggle(){const t=T(),P=pal();Y.tick(t,.1);Y.bell(nt(P.s,18)+12,t+.02,.05,.5);Y.bell(nt(P.s,21)+12,t+.09,.05,.7)},
+ ok(){const t=T(),P=pal();CT.forEach((d,i)=>{Y.bell(nt(P.s,d+7)+12,t+i*.07,.06,1.1);P.lead(nt(P.s,d),t+i*.07,.4,.06)});P.hit(t,.5,P.s.root)},
+ warn(){const t=T(),P=pal(),n=nt(P.s,14);P.lead(n,t,.4,.07);P.lead(n+1,t,.4,.06);P.hit(t,.7,P.s.root);Y.boom(t,.3)},
  whoosh(){let first=true;try{first=!sessionStorage.getItem('nova-fan');sessionStorage.setItem('nova-fan','1')}catch(e){}fan(T(),first?'full':'short')},
  victory(){fan(T(),'mini')}
 };
-function chord3(t){Y.brass(62,t,.3,.07);Y.brass(69,t,.3,.06);Y.brass(74,t,.36,.065)}
 const play=n=>{if(ready())S[n]()};
 window.novaSfx={play,get on(){return on}};
 let lastH=0,lastT=0,lastEl=null;

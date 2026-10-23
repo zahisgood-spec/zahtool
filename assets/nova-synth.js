@@ -81,6 +81,39 @@ function create(ctx,out,o){
   tick(t,v){v=v||.1;const x=osc('sine',170),g=ctx.createGain();x.frequency.setValueAtTime(170,t);x.frequency.exponentialRampToValueAtTime(70,t+.08);g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+.004);g.gain.exponentialRampToValueAtTime(.0001,t+.12);x.connect(g);g.connect(percBus);x.start(t);x.stop(t+.14);
    const y=osc('triangle',2100),g2=ctx.createGain();g2.gain.setValueAtTime(v*.35,t);g2.gain.exponentialRampToValueAtTime(.0001,t+.04);y.connect(g2);g2.connect(bellBus);y.start(t);y.stop(t+.06)}
  };
+
+ /* ── V3.6 新增聲部：電子合成、節奏、氛圍 ── */
+ const synBus=bus(.3),padBus=bus(.7),hatBus=bus(.1),kickBus=bus(0),subBus=bus(0);
+ /* 踩鑔 */
+ S.hat=(t,v,open)=>{v=v||.05;const d=open?.28:.045,s=noise(),h=ctx.createBiquadFilter(),g=ctx.createGain();h.type='highpass';h.frequency.value=7000;
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+.002);g.gain.exponentialRampToValueAtTime(.0001,t+d);s.connect(h);h.connect(g);g.connect(hatBus);s.start(t,Math.random()*2);s.stop(t+d+.03)};
+ /* 底鼓 */
+ S.kick=(t,v)=>{v=v==null?.6:v;const x=osc('sine',150),g=ctx.createGain();x.frequency.setValueAtTime(150,t);x.frequency.exponentialRampToValueAtTime(46,t+.16);
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+.003);g.gain.exponentialRampToValueAtTime(.0001,t+.5);x.connect(g);g.connect(kickBus);x.start(t);x.stop(t+.55);
+  const s=noise(),f=ctx.createBiquadFilter(),ng=ctx.createGain();f.type='highpass';f.frequency.value=1800;ng.gain.setValueAtTime(v*.18,t);ng.gain.exponentialRampToValueAtTime(.0001,t+.02);s.connect(f);f.connect(ng);ng.connect(kickBus);s.start(t,Math.random()*2);s.stop(t+.03)};
+ /* 拍手 */
+ S.clap=(t,v)=>{v=v||.18;[0,.012,.024].forEach((o,i)=>{const s=noise(),f=ctx.createBiquadFilter(),g=ctx.createGain(),a=t+o;f.type='bandpass';f.frequency.value=1500;f.Q.value=.9;
+  g.gain.setValueAtTime(0,a);g.gain.linearRampToValueAtTime(v,a+.002);g.gain.exponentialRampToValueAtTime(.0001,a+(i===2?.16:.02));s.connect(f);f.connect(g);g.connect(percBus);s.start(a,Math.random()*2);s.stop(a+.2)})};
+ /* 808 低頻（帶飽和） */
+ S.sub808=(n,t,d,v)=>{v=v||.3;d=d||.5;const f0=mtof(n),x=osc('sine',f0*2.4),g=ctx.createGain(),ws=ctx.createWaveShaper(),cv=new Float32Array(256);for(let i=0;i<256;i++)cv[i]=Math.tanh((i/128-1)*2.2);ws.curve=cv;
+  x.frequency.setValueAtTime(f0*2.4,t);x.frequency.exponentialRampToValueAtTime(f0,t+.07);g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+.006);g.gain.setValueAtTime(v,t+Math.max(.02,d-.12));g.gain.linearRampToValueAtTime(0,t+d);
+  x.connect(ws);ws.connect(g);g.connect(subBus);x.start(t);x.stop(t+d+.05)};
+ /* 電子合成主音／琶音（濾波器包絡） */
+ S.synth=(n,t,d,v,o)=>{o=o||{};v=v||.05;const f0=mtof(n),f=ctx.createBiquadFilter(),g=ctx.createGain(),a=o.atk||.004,rel=o.rel||.06,c=o.cut||Math.min(7000,f0*7);f.type='lowpass';f.Q.value=o.q||4;
+  f.frequency.setValueAtTime(c*2.2,t);f.frequency.exponentialRampToValueAtTime(Math.max(200,c*.5),t+Math.min(d,.35)+.04);
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+a);g.gain.setValueAtTime(v*.7,t+Math.max(a,d*.5));g.gain.linearRampToValueAtTime(0,t+d+rel);
+  (o.det||[-8,8]).forEach(c2=>{const x=osc(o.type||'sawtooth',f0,c2);x.connect(f);x.start(t);x.stop(t+d+rel+.05)});f.connect(g);g.connect(o.dry?dry:synBus)};
+ /* 氛圍墊音 */
+ S.pad=(n,t,d,v)=>{v=v||.03;const f0=mtof(n),f=ctx.createBiquadFilter(),g=ctx.createGain();f.type='lowpass';f.Q.value=.7;f.frequency.setValueAtTime(500,t);f.frequency.linearRampToValueAtTime(2400,t+d*.6);f.frequency.linearRampToValueAtTime(900,t+d+1);
+  env(g,t,Math.min(1.2,d*.4),v,d,1.4);[-12,-4,4,12].forEach(c=>{const x=osc('sawtooth',f0,c);x.connect(f);x.start(t);x.stop(t+d+1.5)});
+  const y=osc('sine',f0/2),yg=ctx.createGain();yg.gain.value=.8;y.connect(yg);yg.connect(g);y.start(t);y.stop(t+d+1.5);f.connect(g);g.connect(padBus)};
+ /* 鑼：不和諧泛音、長尾 */
+ S.gong=(n,t,v,dec)=>{v=v||.1;dec=dec||4;const f0=mtof(n),g=ctx.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+.012);g.gain.exponentialRampToValueAtTime(.0001,t+dec);
+  [[1,1],[1.5,.5],[2.02,.4],[2.76,.3],[3.9,.18],[5.2,.1]].forEach(a=>{const x=osc('sine',f0*a[0]),ag=ctx.createGain();ag.gain.value=a[1];x.connect(ag);ag.connect(g);x.start(t);x.stop(t+dec+.05)});g.connect(fxBus)};
+ /* 低頻持續音：濾波器緩慢呼吸 */
+ S.drone=(n,t,d,v)=>{v=v||.06;const f0=mtof(n),f=ctx.createBiquadFilter(),g=ctx.createGain(),lf=osc('sine',.18),lg=ctx.createGain();f.type='lowpass';f.frequency.value=380;f.Q.value=3;lg.gain.value=220;lf.connect(lg);lg.connect(f.frequency);lf.start(t);lf.stop(t+d+2.2);
+  env(g,t,1.2,v,d,1.6);[-9,0,9].forEach(c=>{const x=osc('sawtooth',f0,c);x.connect(f);x.start(t);x.stop(t+d+2.2)});
+  const y=osc('sine',f0/2),yg=ctx.createGain();yg.gain.value=1.1;y.connect(yg);yg.connect(g);y.start(t);y.stop(t+d+2.2);f.connect(g);g.connect(bassBus)};
  return S
 }
 window.NovaSynth={create,mtof}

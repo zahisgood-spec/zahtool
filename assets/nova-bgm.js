@@ -1,26 +1,15 @@
-/* ZAHTOOL BGM — 史詩電影配樂（原創），以 Web Audio 即時合成，不需任何音檔。
-   結構：序曲 → 英雄主題 → 合唱橋段 → 全樂團高潮，約 1 分 7 秒一輪、循環播放。
-   開關與音量存在主控台設定（bgm.on / bgm.vol），會跟著雲端同步；切換頁面時樂曲會接續。 */
+/* ZAHTOOL BGM — 每個頁面各自一首原創配樂，以 Web Audio 即時合成，不需任何音檔。
+   場景（曲風／調性／速度／旋律）定義在 nova-scenes.js：首頁、登入關卡、主控台、帳號、28 個工具各不相同。
+   曲風：史詩管弦、電子琶音、水晶鈴聲、暗黑氛圍、弦樂脈衝、戰鼓追擊、軍樂進行曲、空靈氛圍、倒數緊張、重低音陷阱。
+   開關與音量存在主控台設定（bgm.on / bgm.vol），會跟著雲端同步；進入登入關卡時會自動換成關卡配樂。 */
 (()=>{
-const AC=window.AudioContext||window.webkitAudioContext;if(!AC||!window.NovaSynth)return;
-const C=window.novaConsole,D=document,SK='nova-bgm-pos';
+const AC=window.AudioContext||window.webkitAudioContext;if(!AC||!window.NovaSynth||!window.NovaScenes)return;
+const NS=window.NovaScenes,C=window.novaConsole,D=document;
 const cfg=()=>C?C.get().bgm:{on:true,vol:.4};
-const BPM=100,BEAT=60/BPM,STEP=BEAT/2,BAR=BEAT*4;
-/* D 大調：b＝低音，t＝中音域和弦音 */
-const CH={D:{b:38,t:[50,54,57,62]},A:{b:45,t:[52,57,61,64]},Bm:{b:47,t:[54,59,62,66]},Fm:{b:42,t:[54,57,61,66]},G:{b:43,t:[55,59,62,67]},Em:{b:40,t:[52,55,59,64]}};
-const SEC=[
- {n:'A',lv:.6,ch:['D','A','Bm','G']},
- {n:'B',lv:.85,ch:['D','A','Bm','Fm','G','D','Em','A']},
- {n:'C',lv:.7,ch:['Bm','G','D','A','Bm','G','A','A']},
- {n:'D',lv:1,ch:['D','A','Bm','Fm','G','D','Em','A']}
-];
-const TOTAL=SEC.reduce((a,s)=>a+s.ch.length,0);
-/* 主旋律：每小節 8 個八分音符格，0＝延續前一音 */
-const TH=[[74,0,0,78,0,0,81,0],[81,0,0,85,0,0,83,81],[78,0,0,81,0,0,83,0],[85,0,0,83,0,81,0,0],[79,0,0,83,0,0,86,0],[85,0,0,81,0,0,78,0],[79,0,81,0,83,0,85,0],[85,0,0,0,0,0,0,0]];
-const CL=[78,79,81,85,83,86,85,81];  /* 橋段的合唱長音 */
+let sc=NS.get(NS.id()),B=60/sc.bpm,ST=B/2,S16=B/4,BAR=B*4,plan=[],TOTAL=1,sceneId=null;
+let ctx,master,Y,bus=null,timer=0,playing=false,t0=0,cn=0,stopT=0,duckF=1,duckT=0;
+const target=()=>Math.min(1,Math.max(0,cfg().vol))*.75*duckF*(sc.gain||1);
 const OST=[0,1,2,1,0,1,2,3];
-let ctx,master,Y,timer=0,playing=false,t0=0,base=0,cn=0,stopT=0,duckF=1,duckT=0;
-const target=()=>Math.min(1,Math.max(0,cfg().vol))*.75*duckF;
 
 function init(){
  if(ctx)return;
@@ -28,44 +17,63 @@ function init(){
  const comp=ctx.createDynamicsCompressor();comp.threshold.value=-14;comp.knee.value=10;comp.ratio.value=6;comp.attack.value=.006;comp.release.value=.25;
  const mk=ctx.createGain();mk.gain.value=1.25;
  master=ctx.createGain();master.gain.value=0;master.connect(comp);comp.connect(mk);mk.connect(ctx.destination);
- Y=NovaSynth.create(ctx,master,{rev:4.8,wet:.62,echo:BEAT*.75});
 }
-function locate(k){for(const s of SEC){if(k<s.ch.length)return[s,k];k-=s.ch.length}}
-function theme(arr,t,v,o){
+/* 進入場景：建立專屬的音色庫與音量匯流排；舊場景淡出、新場景淡入 */
+function enter(id){
+ sceneId=id;sc=NS.get(id);B=60/sc.bpm;ST=B/2;S16=B/4;BAR=B*4;plan=NS.plan(sc);TOTAL=plan.length;
+ const old=bus,now=ctx.currentTime;
+ bus=ctx.createGain();bus.gain.setValueAtTime(0,now);bus.connect(master);
+ Y=NovaSynth.create(ctx,bus,{rev:sc.rev,wet:sc.wet,echo:B*.75});
+ bus.gain.linearRampToValueAtTime(1,now+(old?.9:.05));
+ if(old){old.gain.cancelScheduledValues(now);old.gain.setValueAtTime(old.gain.value,now);old.gain.linearRampToValueAtTime(0,now+.7);setTimeout(()=>{try{old.disconnect()}catch(e){}},8000)}
+ t0=now+(old?.45:.2);cn=0;
+ if(playing)fade(target(),.5);
+ paint()
+}
+
+/* ───────── 共用：主旋律 ───────── */
+function theme(arr,t,v,o,voice){
  let s=0;
  while(s<8){
   if(arr[s]){let e=s+1;while(e<8&&!arr[e])e++;
-   const n=arr[s]+(o||0),d=(e-s)*STEP*.96+(e===8?.06:0),at=t+s*STEP;
-   Y.brass(n,at,d,v);Y.brass(n-12,at,d,v*.55);s=e
+   voice(arr[s]+(o||0),t+s*ST,(e-s)*ST*.96+(e===8?.06:0),v);s=e
   }else s++
  }
 }
-function bar(k,t){
- const[sec,j]=locate(k%TOTAL),c=CH[sec.ch[j]],lv=sec.lv,n=sec.n,last=j===sec.ch.length-1,root=c.b;
- /* 弦樂長音鋪底 */
- c.t.forEach(x=>Y.strings(x,t,BAR*1.04,.026*lv));
- /* 低音 */
- if(!(n==='A'&&j<2))Y.bass(root,t,BAR*.97,.12*lv);
- /* 定音鼓 */
- if(n==='A'){Y.timp(t,.3,38);if(last)Y.timpRoll(t+BEAT*2,BEAT*2,.15,.5,38)}
- else if(n==='B'){Y.timp(t,.5,38);Y.timp(t+BEAT*2,.36,45)}
- else if(n==='D'){Y.timp(t,.62,38);Y.timp(t+BEAT*1.5,.4,45);Y.timp(t+BEAT*2,.5,38);Y.timp(t+BEAT*3,.4,45);Y.timp(t+BEAT*3.5,.34,50)}
- else Y.timp(t,.3,38);
- /* 跳弓弦樂推進 */
- if(n!=='C')for(let s=0;s<8;s++)Y.spicc(c.t[OST[s]],t+s*STEP,(n==='A'?.016:n==='B'?.028:.038)*(s%2?.75:1));
- /* 主旋律 */
- if(n==='B'){theme(TH[j],t,.1);if(j===0||j===4)Y.bell(86,t,.04,2)}
- else if(n==='D'){theme(TH[j],t,.115);
-  TH[j].forEach((x,s)=>{if(x){Y.choir(x-12,t+s*STEP,STEP*2.2,.03);Y.bell(x+12,t+s*STEP,.03,1.2)}});
-  c.t.forEach(x=>Y.brass(x+12,t,BAR*.95,.03))}
- else if(n==='A'&&j>=2)theme(TH[j===2?2:4],t,.06,-12);
- else if(n==='C'){
-  c.t.forEach(x=>Y.choir(x+12,t,BAR*1.02,.04));Y.choir(CL[j],t,BAR*1.02,.05);
-  if(j>=4)Y.brass(CL[j]-12,t+BEAT*.5,BAR*.85,.055)
+const V={
+ brass:(n,at,d,v)=>{Y.brass(n,at,d,v);Y.brass(n-12,at,d,v*.55)},
+ hymn:(n,at,d,v)=>{Y.choir(n,at,d*1.05,v*.55);Y.strings(n,at,d*1.05,v*.45);Y.strings(n-12,at,d*1.05,v*.3);Y.bell(n+12,at,v*.25,1.4)},
+ synth:(n,at,d,v)=>{Y.synth(n,at,d,v*.75,{type:'sawtooth',det:[-10,10],cut:5200});Y.synth(n+12,at,d,v*.25,{type:'square',cut:3600})},
+ bell:(n,at,d,v)=>{Y.bell(n+12,at,v*.8,2);Y.pluck(n,at,v*.55)},
+ dark:(n,at,d,v)=>{Y.choir(n,at,d*1.05,v*.5);Y.brass(n,at,d,v*.8);Y.brass(n-12,at,d,v*.5)},
+ pluck:(n,at,d,v)=>{Y.pluck(n,at,v*1.3);Y.bell(n+12,at,v*.25,1.6)},
+ bright:(n,at,d,v)=>{Y.brass(n,at,d,v);Y.brass(n+12,at,d,v*.35);Y.bell(n+12,at,v*.3,1.1)}
+};
+
+/* ───────── 曲風 1：史詩管弦（首頁／文字／文章長度／BMI） ───────── */
+function orch(p,t){
+ const{n,j,last,lv,b}=p,c=p.t,T0=sc.root,vr=sc.var||'epic',hy=vr==='hymn',lead=hy?V.hymn:V.brass,tv=hy?.55:1;
+ c.forEach(x=>Y.strings(x,t,BAR*1.04,(hy?.034:.026)*lv));
+ if(!(n==='A'&&j<2))Y.bass(b,t,BAR*.97,.12*lv);
+ if(n==='A'){Y.timp(t,.3*tv,T0);if(last)Y.timpRoll(t+B*2,B*2,.15*tv,.5*tv,T0)}
+ else if(n==='B'){Y.timp(t,.5*tv,T0);Y.timp(t+B*2,.36*tv,T0+7)}
+ else if(n==='D'){Y.timp(t,.62*tv,T0);Y.timp(t+B*1.5,.4*tv,T0+7);Y.timp(t+B*2,.5*tv,T0);Y.timp(t+B*3,.4*tv,T0+7);Y.timp(t+B*3.5,.34*tv,T0+12)}
+ else Y.timp(t,.3*tv,T0);
+ if(n!=='C'){
+  if(hy)for(let s=0;s<8;s++)Y.pluck(c[OST[s]]+12,t+s*ST,.03*lv);
+  else for(let s=0;s<8;s++)Y.spicc(c[OST[s]],t+s*ST,(n==='A'?.016:n==='B'?.028:.038)*(s%2?.75:1))
  }
- /* 亮晶晶的點綴 */
- if(n==='A'||n==='C')[0,3,6].forEach(s=>Y.bell(c.t[(s+j)%4]+24,t+s*STEP,.022*lv,1.5));
- /* 段落轉折：銅鈸、重擊、爬升 */
+ if(vr==='brassy'&&(n==='B'||n==='D')){Y.brass(c[0],t,B*.9,.05*lv);Y.brass(c[2],t+B*2,B*.9,.05*lv);Y.snare(t+B*3,.1);Y.snare(t+B*3.5,.12)}
+ if(n==='B'){theme(p.th,t,hy?.09:.1,0,lead);if(j===0||j===4)Y.bell(c[3]+24,t,.04,2)}
+ else if(n==='D'){theme(p.th,t,hy?.1:.115,0,lead);
+  p.th.forEach((x,s)=>{if(x){Y.choir(x-12,t+s*ST,ST*2.2,.03);Y.bell(x+12,t+s*ST,.03,1.2)}});
+  c.forEach(x=>Y.brass(x+12,t,BAR*.95,hy?.018:.03))}
+ else if(n==='A'&&j>=2)theme(p.th,t,.06,-12,lead);
+ else if(n==='C'){
+  c.forEach(x=>Y.choir(x+12,t,BAR*1.02,.04));Y.choir(p.cl,t,BAR*1.02,.05);
+  if(j>=4)Y.brass(p.cl-12,t+B*.5,BAR*.85,.055)
+ }
+ if(n==='A'||n==='C')[0,3,6].forEach(s=>Y.bell(c[(s+j)%4]+24,t+s*ST,.022*lv,1.5));
  if(j===0){
   if(n==='B'||n==='D'){Y.crash(t,.34,3.4);Y.boom(t,.6)}
   else if(n==='C'){Y.crash(t,.2,3);Y.boom(t,.4)}
@@ -73,26 +81,161 @@ function bar(k,t){
  }
  if(j===4&&(n==='B'||n==='D'))Y.crash(t,.2,2.2);
  if(last){
-  if(n==='A'){Y.riser(t,BAR,.2);Y.revCrash(t+BEAT*2,BEAT*2,.2)}
-  else if(n==='C'){Y.riser(t,BAR,.24);Y.roll(t+BEAT*2,BEAT*2,.05,.2)}
-  else if(n==='B')Y.revCrash(t+BEAT*2,BEAT*2,.16);
-  else{Y.roll(t+BEAT*2,BEAT*2,.04,.16);Y.revCrash(t+BEAT*2,BEAT*2,.16)}
+  if(n==='A'){Y.riser(t,BAR,.2);Y.revCrash(t+B*2,B*2,.2)}
+  else if(n==='C'){Y.riser(t,BAR,.24);Y.roll(t+B*2,B*2,.05,.2)}
+  else if(n==='B')Y.revCrash(t+B*2,B*2,.16);
+  else{Y.roll(t+B*2,B*2,.04,.16);Y.revCrash(t+B*2,B*2,.16)}
  }
 }
+
+/* ───────── 曲風 2：電子琶音（主控台／JSON／QR／UUID／進位） ───────── */
+function arp(p,t){
+ const{n,j,last,lv,b}=p,c=p.t,PAT=[0,1,2,3,2,1,2,3,0,1,2,3,2,1,3,2];
+ if(n!=='C')for(let s=0;s<8;s++)Y.synth(b,t+s*ST,ST*.9,.08*lv,{type:'sawtooth',det:[-6,6],cut:420,q:2,dry:true});
+ else{c.forEach(x=>Y.pad(x,t,BAR,.03));Y.bass(b,t,BAR*.97,.1)}
+ for(let s=0;s<16;s++){
+  if(n==='C'&&s%2)continue;
+  Y.synth(c[PAT[s]]+12,t+s*S16,S16*.8,(n==='A'?.03:.042)*lv*(s%4===0?1.3:1),{type:'square',det:[-5,5],cut:2600+lv*2500,q:6})
+ }
+ if(n==='B'||n==='D'){for(let q=0;q<4;q++){Y.kick(t+q*B,.5*lv);Y.hat(t+q*B+B*.5,.05,q%2===1)}}
+ if(n==='D'){Y.clap(t+B,.2);Y.clap(t+B*3,.2);theme(p.th,t,.1,0,V.synth)}
+ if(n==='B')theme(p.th,t,.07,0,V.synth);
+ if(n==='A'&&j>=2)theme(p.th,t,.05,0,V.bell);
+ if(j===0){Y.crash(t,n==='D'?.3:.18,2.6);if(n==='B'||n==='D')Y.boom(t,.5)}
+ if(last){Y.riser(t,BAR,n==='C'?.28:.18);if(n==='C'||n==='D')for(let s=0;s<8;s++)Y.hat(t+B*2+s*ST/2,.03+s*.006)}
+}
+
+/* ───────── 曲風 3：水晶鈴聲（帳號／圖片壓縮／顏色轉換） ───────── */
+function crystal(p,t){
+ const{n,j,last,lv,b}=p,c=p.t,T0=sc.root,PAT=[0,1,2,3,2,1,2,1];
+ c.forEach(x=>Y.strings(x,t,BAR*1.04,.022*lv));Y.bass(b,t,BAR*.97,.08*lv);
+ for(let s=0;s<8;s++)Y.pluck(c[PAT[s]]+12,t+s*ST,(n==='A'?.03:.045)*lv);
+ if(n==='B'||n==='D')theme(p.th,t,n==='D'?.075:.055,0,V.bell);
+ if(n==='C'||n==='D')c.forEach(x=>Y.choir(x+12,t,BAR,.025*lv));
+ if(n==='D'){Y.timp(t,.35,T0);Y.timp(t+B*2,.28,T0+7)}
+ [1,4,7].forEach(s=>Y.bell(c[(j+s)%4]+36,t+s*ST,.02*lv,2.2));
+ if(j===0){Y.crash(t,.12,3);Y.bell(c[3]+24,t,.05,3)}
+ if(last)Y.revCrash(t+B*2,B*2,.14)
+}
+
+/* ───────── 曲風 4：暗黑氛圍（登入關卡／密碼／正規表示式） ───────── */
+function dark(p,t){
+ const{n,j,last,lv,b}=p,c=p.t,T0=sc.root,hv=n==='A'?.35:n==='D'?.7:.5;
+ if(j%2===0)Y.drone(b,t,BAR*2,.07*lv);
+ Y.timp(t,hv,T0);Y.timp(t+B*.75,hv*.7,T0);
+ if(n==='B'||n==='D'){Y.timp(t+B*2,hv*.8,T0);Y.timp(t+B*2.75,hv*.55,T0)}
+ [c[0]-12,c[1]-12,c[2]-12].forEach(x=>Y.strings(x,t,BAR*1.04,.03*lv));
+ if(n!=='A')c.forEach(x=>Y.choir(x,t,BAR*1.02,.026*lv));
+ if(n==='B')theme(p.th,t,.07,-12,V.dark);
+ if(n==='D'){theme(p.th,t,.1,-12,V.dark);Y.brass(b+12,t,BAR*.9,.05)}
+ if(n==='A'||n==='C')Y.bell(c[(j*2)%4]+25,t+B*(1+j%3),.03,3);
+ if(j===0){Y.gong(b+12,t,n==='D'?.2:.12,5);if(n==='D')Y.boom(t,.8)}
+ if(n==='D'&&j%4===3)Y.boom(t+B*3,.5);
+ if(last){Y.riser(t,BAR,.26);Y.revCrash(t+B*2,B*2,.2)}
+}
+
+/* ───────── 曲風 5：弦樂脈衝（Base64／日期計算／文字行／百分比） ───────── */
+function pulse(p,t){
+ const{n,j,last,lv,b}=p,c=p.t,T0=sc.root,PAT=[0,1,2,1,3,2,1,2,0,1,2,1,3,2,3,1];
+ for(let s=0;s<16;s++)Y.spicc(c[PAT[s]],t+s*S16,(n==='A'?.012:n==='B'?.02:n==='C'?.014:.028)*lv*(s%4===0?1.6:1));
+ Y.bass(b,t,BAR*.97,.13*lv);
+ if(n==='B'||n==='D'){Y.timp(t,.5,T0);Y.timp(t+B*2,.4,T0+7)}
+ if(n==='D'){Y.timp(t+B,.28,T0);Y.timp(t+B*3,.3,T0+7);theme(p.th,t,.11,0,V.brass);c.forEach(x=>Y.choir(x+12,t,BAR,.03));c.forEach(x=>Y.brass(x,t,BAR*.9,.03))}
+ if(n==='B')theme(p.th,t,.08,0,V.bright);
+ if(n==='C'){c.forEach(x=>Y.choir(x+12,t,BAR,.035));Y.bell(c[(j*3)%4]+24,t,.04,2)}
+ if(n==='A'&&j>=2)theme(p.th,t,.05,-12,V.pluck);
+ if(j===0){Y.crash(t,n==='D'||n==='B'?.3:.16,3);if(n==='B'||n==='D')Y.boom(t,.55)}
+ if(last){Y.riser(t,BAR,.22);if(n==='B'||n==='D')Y.roll(t+B*2,B*2,.04,.17)}
+}
+
+/* ───────── 曲風 6：戰鼓追擊（URL／SEO／多重搜尋） ───────── */
+function drive(p,t){
+ const{n,j,last,lv,b}=p,c=p.t,T0=sc.root,G=[1,0,1,1,0,1,0,1],PAT=[0,2,1,3,0,2,1,3,0,2,1,3,0,2,3,1];
+ if(n==='B'||n==='D'){G.forEach((x,s)=>{if(x){Y.timp(t+s*ST,(s===0?.6:.4)*lv,T0);if(s%4===0)Y.boom(t+s*ST,.25,.4)}})}
+ else{Y.timp(t,.4,T0);Y.timp(t+B*2,.3,T0+7)}
+ [0,3,6].forEach(s=>{Y.brass(b+12,t+s*ST,ST*.7,.06*lv);Y.brass(b+19,t+s*ST,ST*.7,.04*lv)});
+ Y.bass(b,t,BAR*.97,.12*lv);
+ if(n!=='C')for(let s=0;s<16;s++)Y.spicc(c[PAT[s]],t+s*S16,(n==='A'?.01:.018)*lv);
+ if(n==='D'){Y.snare(t+B,.22);Y.snare(t+B*3,.22);theme(p.th,t,.115,0,V.brass)}
+ if(n==='B'){Y.snare(t+B*3,.16);theme(p.th,t,.09,0,V.brass)}
+ if(n==='C'){c.forEach(x=>Y.choir(x+12,t,BAR,.04));c.forEach(x=>Y.strings(x,t,BAR,.03))}
+ if(j===0){Y.crash(t,n==='D'?.36:.22,3);Y.boom(t,.55)}
+ if(last){Y.riser(t,BAR,.24);Y.roll(t+B*2,B*2,.05,.2)}
+}
+
+/* ───────── 曲風 7：軍樂進行曲（大小寫轉換／單位換算） ───────── */
+function march(p,t){
+ const{n,j,last,lv,b}=p,c=p.t,T0=sc.root;
+ for(let q=0;q<4;q++){
+  Y.snare(t+q*B,.12*lv);Y.snare(t+q*B+B*.75,.07*lv);if(q%2===0)Y.snare(t+q*B+B*.5,.08*lv);
+  if(q%2===0)Y.bass(b,t+q*B,B*.9,.12*lv);else Y.bass(b+7,t+q*B,B*.9,.1*lv);
+  if(q%2===1)c.forEach(x=>Y.brass(x,t+q*B,B*.4,.025*lv))
+ }
+ if(n!=='A'){Y.timp(t,.5,T0);Y.timp(t+B*2,.4,T0+7)}
+ c.forEach(x=>Y.strings(x,t,BAR*1.04,.018*lv));
+ if(n==='B'||n==='D')theme(p.th,t,n==='D'?.115:.095,0,V.bright);
+ if(n==='D'){c.forEach(x=>Y.brass(x+12,t+B*.5,B*.5,.03));Y.crash(t+B*2,.16,1.6)}
+ if(n==='A'&&j>=2)theme(p.th,t,.06,0,V.bell);
+ if(n==='C'){c.forEach(x=>Y.choir(x+12,t,BAR,.035));Y.choir(p.cl,t,BAR,.04)}
+ if(j===0){Y.crash(t,n==='D'||n==='B'?.32:.18,3);if(n==='B'||n==='D')Y.boom(t,.5)}
+ if(last){Y.roll(t+B*2,B*2,.05,.2);Y.revCrash(t+B*2,B*2,.16)}
+}
+
+/* ───────── 曲風 8：空靈氛圍（備忘錄／漸層／世界時鐘） ───────── */
+function ambient(p,t){
+ const{n,j,last,lv,b}=p,c=p.t,T0=sc.root;
+ c.forEach(x=>Y.pad(x,t,BAR*1.02,.026*lv));Y.bass(b,t,BAR*.97,.07*lv);
+ if(p.th)theme(p.th,t,n==='A'?.04:.06,0,V.pluck);
+ [2,5].forEach(s=>Y.bell(c[(j*3+s)%4]+24,t+s*ST,.022*lv,2.4));
+ if(n==='D')c.forEach(x=>Y.strings(x,t,BAR*1.04,.02));
+ if(n==='C')c.forEach(x=>Y.choir(x+12,t,BAR,.022));
+ if(j===0){Y.bell(c[3]+24,t,.05,3);if(n==='B'||n==='D')Y.timp(t,.25,T0)}
+ if(last)Y.riser(t,BAR,.12)
+}
+
+/* ───────── 曲風 9：倒數緊張（番茄鐘／時間戳／碼表） ───────── */
+function tension(p,t){
+ const{n,j,last,lv,b}=p,c=p.t;
+ for(let q=0;q<4;q++){Y.tick(t+q*B,(q===0?.12:.07)*(.6+lv*.6));Y.hat(t+q*B+B*.5,.02*lv)}
+ Y.drone(b,t,BAR,.06);
+ for(let s=0;s<8;s++)Y.spicc(c[s%2?2:0],t+s*ST,.012*lv*(s%2?.7:1)*(n==='A'?.7:1.2));
+ if(n==='B'||n==='D')theme(p.th,t,.07,0,V.bell);
+ if(n==='D'){[0,2].forEach(i=>Y.brass(c[i]+12,t+B*.5,B*.3,.06));[0,2].forEach(i=>Y.brass(c[i]+12,t+B*2.5,B*.3,.05));if(j%4===0)Y.boom(t,.6)}
+ if(n==='C')c.forEach(x=>Y.strings(x,t,BAR*1.04,.03));
+ if(j===0){Y.crash(t,n==='D'?.3:.16,2.6);Y.boom(t,.4)}
+ if(last){Y.riser(t,BAR,.24);Y.roll(t+B*2,B*2,.04,.18)}
+}
+
+/* ───────── 曲風 10：重低音陷阱（隨機抽籤／貸款試算） ───────── */
+function trap(p,t){
+ const{n,j,last,lv,b}=p,c=p.t,K=[1,0,0,0,0,1,0,0],K2=[1,0,0,1,0,0,1,0];
+ if(n!=='C'){
+  const kp=n==='D'?K2:K;
+  kp.forEach((x,s)=>{if(x){Y.kick(t+s*ST,.55*lv);Y.sub808(b,t+s*ST,ST*1.8,.32*lv)}});
+  if(n!=='A')Y.clap(t+B*2,.22);
+  for(let s=0;s<16;s++)Y.hat(t+s*S16,(s%4===0?.05:.03)*lv,n==='D'&&s%8===6)
+ }else{c.forEach(x=>Y.pad(x,t,BAR,.03));Y.sub808(b,t,BAR*.9,.22)}
+ if(n==='B'||n==='D')theme(p.th,t,n==='D'?.1:.075,0,V.bell);
+ if(n==='A'&&j>=2)theme(p.th,t,.05,0,V.bell);
+ if(n==='D'){[0,3].forEach(s=>{Y.brass(c[0]+12,t+s*ST,ST*.8,.07);Y.brass(c[2]+12,t+s*ST,ST*.8,.05)})}
+ if(j===0){Y.crash(t,n==='D'?.34:.2,2.8);Y.boom(t,n==='D'?.7:.4)}
+ if(last){Y.riser(t,BAR,.24);for(let s=0;s<12;s++)Y.hat(t+B*3+s*B/12,.03+s*.004)}
+}
+const STY={home:orch,orch,arp,bell:crystal,dark,pulse,drive,march,ambient,tension,trap};
+
 function sched(){
  if(!playing||!ctx)return;
  const h=ctx.currentTime+1.6;
- while(t0+cn*BAR<h){const k=(base+cn)%TOTAL;bar(k,t0+cn*BAR);cn++;try{sessionStorage.setItem(SK,String((k+1)%TOTAL))}catch(e){}}
+ while(t0+cn*BAR<h){const k=cn%TOTAL,fn=STY[sc.st]||orch;fn(plan[k],t0+cn*BAR);cn++}
 }
 function fade(v,d){
  if(!ctx)return;const n=ctx.currentTime;master.gain.cancelScheduledValues(n);master.gain.setValueAtTime(master.gain.value,n);master.gain.linearRampToValueAtTime(v,n+d)
 }
 function play(){
  if(playing)return;clearTimeout(stopT);init();
- let saved=0;try{saved=parseInt(sessionStorage.getItem(SK)||'0',10)||0}catch(e){}
- base=((saved%TOTAL)+TOTAL)%TOTAL;
  if(ctx.state==='suspended')ctx.resume().then(paint).catch(()=>{});
- playing=true;t0=ctx.currentTime+.2;cn=0;
+ enter(NS.id());
+ playing=true;
  timer=setInterval(sched,250);sched();fade(target(),1.6);paint()
 }
 function stop(){
@@ -108,6 +251,12 @@ addEventListener('nova-duck',e=>{
  const d=e.detail||{};duckF=d.to==null?.3:d.to;if(playing)fade(target(),.25);
  clearTimeout(duckT);duckT=setTimeout(()=>{duckF=1;if(playing)fade(target(),1.8)},d.ms||4000)
 });
+/* 環節切換（例如登入關卡出現／消失）：換成該環節的配樂 */
+addEventListener('nova-scene',e=>{
+ const id=(e.detail&&e.detail.id)||NS.id();
+ if(id===sceneId&&playing)return;
+ if(playing&&ctx){enter(id);sched()}else{sc=NS.get(id);paint()}
+});
 
 /* 介面：左下角音樂鈕＋滑動音量 */
 let btn,vol,wrap;
@@ -115,7 +264,7 @@ function paint(){
  if(!btn)return;
  const on=cfg().on,live=on&&ctx&&ctx.state==='running';
  btn.classList.toggle('off',!on);btn.classList.toggle('wait',on&&!live);btn.classList.toggle('live',!!live);
- const label=!on?'開啟背景音樂':live?'關閉背景音樂':'點一下開始播放背景音樂';
+ const label=(!on?'開啟背景音樂':live?'關閉背景音樂':'點一下開始播放背景音樂')+'・'+sc.name;
  btn.setAttribute('aria-label',label);btn.title=label;btn.setAttribute('aria-pressed',on);
  if(vol&&document.activeElement!==vol)vol.value=cfg().vol
 }

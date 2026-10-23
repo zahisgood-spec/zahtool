@@ -49,11 +49,11 @@ function show(){
  if(u&&!isG(u)){sub.textContent='目前登入的帳號不是 Google 帳號。請登出後改用 Google 登入。';o.hidden=false}
  else{sub.textContent='請先使用 Google 帳號登入，才能使用 ZAHTOOL 的所有工具。';o.hidden=true}
  if(s.status==='error'&&!u&&!busy)m.textContent=s.msg||'';
- if(!el.classList.contains('on')){D.documentElement.style.overflow='hidden';setInert(true);requestAnimationFrame(()=>requestAnimationFrame(()=>{el.classList.add('on');const b=el.querySelector('#zB');b&&b.focus({preventScroll:true})}))}
+ if(!el.classList.contains('on')){try{window.NovaScenes&&NovaScenes.set('gate')}catch(e){}D.documentElement.style.overflow='hidden';setInert(true);requestAnimationFrame(()=>requestAnimationFrame(()=>{el.classList.add('on');const b=el.querySelector('#zB');b&&b.focus({preventScroll:true})}))}
 }
 function hide(){
  if(!el||!el.classList.contains('on'))return;
- try{window.novaSfx&&novaSfx.play('victory')}catch(e){}
+ try{window.novaSfx&&novaSfx.play('victory')}catch(e){}try{window.NovaScenes&&NovaScenes.set(null)}catch(e){}
  el.classList.remove('on');setInert(false);D.documentElement.style.overflow='';
  const e=el;el=null;setTimeout(()=>e.remove(),600);
 }
