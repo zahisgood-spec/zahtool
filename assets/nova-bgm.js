@@ -135,8 +135,8 @@ function ui(){
  D.body.appendChild(wrap);btn=wrap.querySelector('#bgmBtn');vol=wrap.querySelector('#bgmVol');
  btn.onclick=()=>{
   /* 若因瀏覽器限制尚未發聲，這一下只是「啟動」，不要當成關閉 */
-  if(cfg().on&&ctx&&ctx.state!=='running'){ctx.resume().then(paint);return}
-  cfg().on=!cfg().on;if(C)C.save();apply()
+  if(cfg().on&&ctx&&ctx.state!=='running'){ctx.resume().then(paint);if(window.novaSfx)novaSfx.play('power');return}
+  cfg().on=!cfg().on;if(C)C.save();apply();if(window.novaSfx)novaSfx.play(cfg().on?'power':'powerdown')
  };
  vol.oninput=()=>{cfg().vol=+vol.value;if(C)C.save(false);if(playing)fade(target(),.15)};
  vol.onchange=()=>{if(C)C.save()};

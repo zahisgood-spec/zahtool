@@ -53,10 +53,10 @@ function create(ctx,out,o){
    x.connect(g);y.connect(g2);g.connect(percBus);g2.connect(percBus);x.start(t);y.start(t);x.stop(t+1.6);y.stop(t+.6);
    const s=noise(),sf=ctx.createBiquadFilter(),sg=ctx.createGain();sf.type='lowpass';sf.frequency.value=1400;sg.gain.setValueAtTime(v*.5,t);sg.gain.exponentialRampToValueAtTime(.0001,t+.05);s.connect(sf);sf.connect(sg);sg.connect(percBus);s.start(t,Math.random()*2);s.stop(t+.08)},
   /* 電影式重擊：低頻轟＋噪音尾巴 */
-  boom(t,v){v=v==null?.8:v;const x=osc('sine',95),g=ctx.createGain();x.frequency.setValueAtTime(95,t);x.frequency.exponentialRampToValueAtTime(30,t+.55);
-   g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+.006);g.gain.exponentialRampToValueAtTime(.0001,t+2.4);x.connect(g);g.connect(percBus);x.start(t);x.stop(t+2.5);
-   const s=noise(),f=ctx.createBiquadFilter(),ng=ctx.createGain();f.type='lowpass';f.frequency.setValueAtTime(1100,t);f.frequency.exponentialRampToValueAtTime(60,t+1.3);
-   ng.gain.setValueAtTime(v*.5,t);ng.gain.exponentialRampToValueAtTime(.0001,t+1.4);s.connect(f);f.connect(ng);ng.connect(fxBus);s.start(t,Math.random()*2);s.stop(t+1.5)},
+  boom(t,v,k){v=v==null?.8:v;k=k||1;const x=osc('sine',95),g=ctx.createGain();x.frequency.setValueAtTime(95,t);x.frequency.exponentialRampToValueAtTime(30,t+.55*k);
+   g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+.006);g.gain.exponentialRampToValueAtTime(.0001,t+2.4*k);x.connect(g);g.connect(percBus);x.start(t);x.stop(t+2.5*k);
+   const s=noise(),f=ctx.createBiquadFilter(),ng=ctx.createGain();f.type='lowpass';f.frequency.setValueAtTime(1100,t);f.frequency.exponentialRampToValueAtTime(60,t+1.3*k);
+   ng.gain.setValueAtTime(v*.5,t);ng.gain.exponentialRampToValueAtTime(.0001,t+1.4*k);s.connect(f);f.connect(ng);ng.connect(fxBus);s.start(t,Math.random()*2);s.stop(t+1.5*k)},
   crash(t,v,d){v=v==null?.35:v;d=d||3;const s=noise(),h=ctx.createBiquadFilter(),b=ctx.createBiquadFilter(),g=ctx.createGain();h.type='highpass';h.frequency.value=4200;b.type='peaking';b.frequency.value=7600;b.gain.value=6;
    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+.004);g.gain.exponentialRampToValueAtTime(.0001,t+d);s.connect(h);h.connect(b);b.connect(g);g.connect(fxBus);s.start(t,Math.random()*.5);s.stop(t+d+.05)},
   /* 爬升：噪音＋上滑鋸齒波，越來越亮越來越大 */

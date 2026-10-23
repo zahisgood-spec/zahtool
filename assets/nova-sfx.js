@@ -33,7 +33,10 @@ function fan(t,mode){
  [0,.25,.5,.75].forEach((x,i)=>Y.bell(86+[0,4,7,12][i],e+x*B,.05,2))
 }
 const S={
- click(){Y.tick(T(),.13)},
+ click(){const t=T(),n=[62,66,69,74][Math.random()*4|0];Y.boom(t,.5,.4);Y.tick(t,.12);Y.brass(n,t,.2,.07);Y.brass(n-12,t,.2,.05);Y.bell(n+24,t+.015,.04,.9)},
+ power(){const t=T();Y.boom(t,.85);Y.crash(t,.26,2.4);Y.timp(t,.6,38);[62,66,69,74].forEach(n=>Y.brass(n,t,.8,.07));Y.strings(50,t,1.4,.04);
+  [[74,.06],[78,.15],[81,.24],[86,.33]].forEach(a=>{Y.brass(a[0],t+a[1],.3,.05);Y.bell(a[0]+12,t+a[1],.05,1.5)});duck(1700)},
+ powerdown(){const t=T();Y.boom(t,.75);Y.timp(t,.55,38);[[74,0],[69,.12],[62,.24],[50,.36]].forEach(a=>{Y.brass(a[0],t+a[1],.35,.06);Y.brass(a[0]-12,t+a[1],.35,.04)});Y.revCrash(t,.5,.1);duck(1300)},
  open(){const t=T();Y.boom(t,.6);chord3(t);Y.bell(86,t+.02,.05,1.4);Y.riser(t,.4,.07)},
  hover(){Y.bell(PENT[Math.random()*5|0],T(),.028,.5)},
  type(){Y.bell(88+(Math.random()*5|0),T(),.03,.2)},
@@ -48,7 +51,7 @@ const play=n=>{if(ready())S[n]()};
 window.novaSfx={play,get on(){return on}};
 let lastH=0,lastT=0,lastEl=null;
 const CLICK='button,a[href],.chip,.card,summary,.cta,.ghost,.pill-btn,.small,.primary,.tab,label';
-addEventListener('pointerdown',e=>{const t=e.target.closest&&e.target.closest(CLICK);if(!t||t.id==='sfxBtn')return;
+addEventListener('pointerdown',e=>{const t=e.target.closest&&e.target.closest(CLICK);if(!t||t.id==='sfxBtn'||t.id==='bgmBtn'||(t.closest&&t.closest('#bgmWrap')))return;
  if(t.matches('input,textarea'))return;
  if(t.matches('a[href*="tools/"],.card'))play('open');else play('click')},true);
 addEventListener('pointerover',e=>{if(e.pointerType==='touch')return;const t=e.target.closest&&e.target.closest('.card,button,a[href],.chip,summary');if(!t||t===lastEl||t.id==='sfxBtn')return;lastEl=t;const n=performance.now();if(n-lastH<70)return;lastH=n;play('hover')},true);
@@ -67,7 +70,7 @@ function btn(){
  const b=document.createElement('button');b.id='sfxBtn';b.type='button';
  const css=document.createElement('style');css.textContent='#sfxBtn{position:fixed;left:max(14px,env(safe-area-inset-left));bottom:max(14px,env(safe-area-inset-bottom));z-index:150;width:42px;height:42px;border-radius:50%;border:1px solid #ffffff2a;background:#0b0e1dd9;color:#e9ebff;font-size:1.05rem;display:grid;place-items:center;cursor:pointer;backdrop-filter:blur(12px);transition:transform .25s,border-color .25s}#sfxBtn:hover{transform:scale(1.08);border-color:#a58bff}';document.head.appendChild(css);
  const paint=paintFn=()=>{b.textContent=on?'🔊':'🔇';b.setAttribute('aria-label',on?'關閉音效':'開啟音效');b.title=b.getAttribute('aria-label');b.setAttribute('aria-pressed',on)};
- b.onclick=()=>{on=!on;if(C){C.get().sfx.on=on;C.save()}try{localStorage.setItem(KEY,on?'on':'off')}catch(e){}paint();if(on)play('toggle')};
+ b.onclick=()=>{if(on)play('powerdown');on=!on;if(C){C.get().sfx.on=on;C.save()}try{localStorage.setItem(KEY,on?'on':'off')}catch(e){}paint();if(on)play('power')};
  paint();document.body.appendChild(b)}
 const start=()=>{watch();btn();addEventListener('nova-sfx-sync',()=>{if(C)on=C.sfxEnabled();paintFn&&paintFn()})};
 document.readyState==='loading'?addEventListener('DOMContentLoaded',start):start();
